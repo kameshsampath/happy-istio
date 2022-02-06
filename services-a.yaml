@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-a
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: service-a
+    version: v1
+  name: service-a
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: service-a
+    version: v1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: service-a
+    version: v1
+  name: service-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-a
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: service-a
+        version: v1
+    spec:
+      serviceAccountName: service-a
+      containers:
+      - env:
+        - name: "UPSTREAM_URIS"
+          value: "http://service-b,http://service-c"  
+        - name: SERVICE_OWNER
+          value: "dave"
+        - name: "LISTEN_ADDR"
+          value: "0.0.0.0:8080"
+        - name: "SERVER_TYPE"
+          value: "http"                      
+        - name: "NAME"
+          value: "service-a"      
+        - name: "MESSAGE"
+          value: "Hello from service-a"    
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: rinormaloku/happy-service:latest
+        imagePullPolicy: Always
+        name: service-a
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        securityContext:
+          privileged: false
