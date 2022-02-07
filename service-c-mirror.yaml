@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: service-c
+spec:
+  hosts:
+  - "service-c.istioinaction.svc.cluster.local"
+  gateways:
+  - mesh
+  http:
+  - route:
+    - destination:
+        host: service-c
+        subset: version-v1
+    mirror:
+      host: service-c
+      subset: version-v2
+    mirrorPercentage:
+      value: 100.0

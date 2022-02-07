@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: service-c
+    version: v2
+  name: service-c-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-c
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: service-c
+        version: v2
+    spec:
+      serviceAccountName: service-c
+      containers:
+      - env:
+        - name: "LISTEN_ADDR"
+          value: "0.0.0.0:8080"
+        - name: SERVICE_OWNER
+          value: "pam"
+        - name: "SERVER_TYPE"
+          value: "http"
+        - name: "NAME"
+          value: "service-c(v2)"
+        - name: "MESSAGE"
+          value: "Hello from service-c(v2)"
+        - name: "ERROR_TYPE"
+          value: "http_error"
+        - name: "ERROR_RATE"
+          value: "0.6"
+        - name: "ERROR_CODE"
+          value: "500"
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: rinormaloku/happy-service:latest
+        imagePullPolicy: Always
+        name: service-c
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        securityContext:
+          privileged: false
