@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function main() {
-    kind create cluster --name istio
+    kind create cluster --name "${1:-istio}"
     pullAllImages
     loadImagesInKind
 }
@@ -57,4 +57,4 @@ function loadImagesInKind() {
         rinormaloku/happy-service:latest
 }
 
-main
+main "$@"

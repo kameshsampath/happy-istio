@@ -1,14 +1,37 @@
 # README
 
-Download [kluster](https://github.com/kameshsampath/kluster/releases)
+We can use any Kubernetes tool to run local cluster like,
 
-## Set up a `k3s` kubernetes cluster
+- https://rancherdesktop.io/
+- https://minikube.sigs.k8s.io/
+- https://kind.sigs.k8s.io/
 
-```bash
-kluster start --profile happy-istio  --cpus=4 --memory=8g --k3s-server-flags="--disable traefik"
+For this instructions lets use Rancher's Desktop as that allows to have easy access to the Ingress via LoadBalancer IP.
+
+## Download kubectl
+
+Let use the latest stable release,
+
+```shell
+curl -L "https://dl.k8s.io/release/v1.22.6/bin/darwin/amd64/kubectl" -O /usr/local/bin/kubectl
+chmod +x /usr/local/bin/kubectl
 ```
 
-# Deploy workloads
+## Set up a kubernetes cluster
+
+### Rancher Desktop
+
+```bash
+./warmup.sh
+```
+
+### KinD
+
+```bash
+./setup-env.sh
+```
+
+## Deploy workloads
 
 ```bash
 kubectl create ns istioinaction
@@ -152,7 +175,7 @@ kubectl get pods
 
 In the column `READY` in the output we see the pods have 2 containers. One being the application container, and the other is the injected proxy.
 
-```
+```shell
 NAME                            READY   STATUS    RESTARTS   AGE
 service-a-6c5d78f675-k5dqh      2/2     Running   0          18s
 service-b-5c669f6df8-l5xnn      2/2     Running   0          18s
@@ -402,7 +425,7 @@ kubectl apply -n istioinaction  -f peer-auth-strict.yaml
 Now if we execute another request from the legacy workload (i.e. the one without the sidecar that is not mutually authenticating).
 
 ```shell
-kubectl -n default exec curl -- curl -s service-a.istioinaction.svc.cluster.local
+kubectl -n default exec legacy -- curl -s service-a.istioinaction.svc.cluster.local
 ```
 
 It will be rejected with the following output:
@@ -423,7 +446,7 @@ Try accessing _service-a_ from _service-b_
 
 ```shell
 # the service-b pod name might differ in your environment
-kubectl -n istioinaction exec service-b-69c7bfd899-2pwdp  -- curl -vvv -s service-a.istioinaction.svc.cluster.local
+kubectl -n istioinaction exec deploy/service-b -- curl -vvv -s service-a.istioinaction.svc.cluster.local
 ```
 
 And  _service-c_ from _service-b_
@@ -458,11 +481,11 @@ kubectl apply -n istioinaction -f service-a-to-c-auth-policy.yaml
 
 Open the page [localhost:8080/ui](http://localhost:8080/ui) and verify that the services are working properly.
 
-Next, verify that you cannot access _service-a_ or _service-b_ from _service-c_.
+Next, verify that you cannot access _service-a_ from _service-b_ and _service-b_ cannot access _service-c_ as well.
 
 ```shell
 kubectl -n istioinaction exec deploy/service-c-v1 -- curl -s service-a.istioinaction.svc.cluster.local
-kubectl -n istioinaction exec deploy/service-c-v1 -- curl -s service-b.istioinaction.svc.cluster.local
+kubectl -n istioinaction exec deploy/service-b -- curl -s service-c.istioinaction.svc.cluster.local
 ```
 
 Both queries return:
